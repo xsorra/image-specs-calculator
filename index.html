@@ -504,7 +504,7 @@ main {
 }
 .summary-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 16px;
   margin-bottom: 12px;
 }
@@ -609,7 +609,6 @@ main {
 <canvas id="meshCanvas"></canvas>
 
 <div class="app">
-  <!-- Nav -->
   <nav>
     <div class="nav-logo">
       <div class="nav-logo-dot"></div>
@@ -620,7 +619,6 @@ main {
     </button>
   </nav>
 
-  <!-- Main -->
   <main>
     <div class="page-header">
       <h1>Image Specs<br><em>Calculator</em></h1>
@@ -635,7 +633,6 @@ main {
   </main>
 </div>
 
-<!-- Summary Modal -->
 <div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
   <div class="modal">
     <div class="modal-header">
@@ -654,7 +651,6 @@ main {
   </div>
 </div>
 
-<!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <script>
@@ -768,7 +764,6 @@ function addSpec(name = '', dw = '', dh = '', mw = '', mh = '') {
     />
 
     <div class="spec-grid">
-      <!-- Desktop -->
       <div>
         <div class="spec-col-label">🖥 Desktop</div>
         <div class="input-group">
@@ -800,7 +795,6 @@ function addSpec(name = '', dw = '', dh = '', mw = '', mh = '') {
         </div>
       </div>
 
-      <!-- Mobile -->
       <div>
         <div class="spec-col-label">📱 Mobile</div>
         <div class="input-group">
@@ -1006,16 +1000,26 @@ function openSummary() {
       <div class="summary-item-name">${spec.name || 'Untitled'}</div>
       ${dw && dh ? `
         <div class="summary-row">
-          <div class="summary-col"><div class="summary-col-label">Desktop Base Size</div><div class="summary-col-value">${dw} × ${dh}</div><div class="summary-col-unit">pixels</div></div>
-          <div class="summary-col"><div class="summary-col-label">Desktop Retina @2x</div><div class="summary-col-value">${dw*2} × ${dh*2}</div><div class="summary-col-unit">pixels</div></div>
-          <div class="summary-col"><div class="summary-col-label">Desktop Aspect Ratio</div><div class="summary-col-value">${getAspectRatio(dw,dh)}</div><div class="summary-col-unit">simplified</div></div>
+          <div class="summary-col">
+            <div class="summary-col-label">Desktop</div>
+            <div class="summary-col-value">${dw*2} × ${dh*2} px</div>
+          </div>
+          <div class="summary-col">
+            <div class="summary-col-label">Desktop Ratio</div>
+            <div class="summary-col-value">${getAspectRatio(dw,dh)}</div>
+          </div>
         </div>
       ` : ''}
       ${mw && mh ? `
-        <div class="summary-row">
-          <div class="summary-col"><div class="summary-col-label">Mobile Base Size</div><div class="summary-col-value">${mw} × ${mh}</div><div class="summary-col-unit">pixels</div></div>
-          <div class="summary-col"><div class="summary-col-label">Mobile Retina @2x</div><div class="summary-col-value">${mw*2} × ${mh*2}</div><div class="summary-col-unit">pixels</div></div>
-          <div class="summary-col"><div class="summary-col-label">Mobile Aspect Ratio</div><div class="summary-col-value">${getAspectRatio(mw,mh)}</div><div class="summary-col-unit">simplified</div></div>
+        <div class="summary-row" style="margin-top: 12px;">
+          <div class="summary-col">
+            <div class="summary-col-label">Mobile</div>
+            <div class="summary-col-value">${mw*2} × ${mh*2} px</div>
+          </div>
+          <div class="summary-col">
+            <div class="summary-col-label">Mobile Ratio</div>
+            <div class="summary-col-value">${getAspectRatio(mw,mh)}</div>
+          </div>
         </div>
       ` : ''}
     `;
