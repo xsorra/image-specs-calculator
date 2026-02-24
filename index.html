@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Image Specs Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --blue: #1a6cff;
+  --blue-dim: rgba(26,108,255,0.12);
+  --blue-border: rgba(26,108,255,0.2);
+  --dark: #0a0a14;
+  --white: #ffffff;
+  --glass: rgba(255,255,255,0.72);
+  --glass-border: rgba(255,255,255,0.9);
+  --muted: rgba(10,10,20,0.45);
+  --card-bg: rgba(255,255,255,0.65);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: #eef2ff;
+  min-height: 100vh;
+  overflow-x: hidden;
+  cursor: none;
+}
+
+/* ─── CURSOR ─── */
+.cursor { position: fixed; width: 10px; height: 10px; background: var(--blue); border-radius: 50%; pointer-events: none; z-index: 9999; transition: transform 0.15s ease; mix-blend-mode: multiply; }
+.cursor-ring { position: fixed; width: 36px; height: 36px; border: 1.5px solid var(--blue); border-radius: 50%; pointer-events: none; z-index: 9998; transition: all 0.3s cubic-bezier(0.25,0.46,0.45,0.94); opacity: 0.45; }
+
+/* ─── MESH BG ─── */
+#meshCanvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; }
+
+/* ─── LAYOUT ─── */
+.app {
+  position: relative;
+  z-index: 10;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── NAV ─── */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 16px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(238,242,255,0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255,255,255,0.7);
+  animation: fadeDown 0.7s 0.2s cubic-bezier(0.16,1,0.3,1) both;
+}
+
+.nav-logo {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dark);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.nav-logo-dot {
+  width: 8px; height: 8px;
+  background: var(--blue);
+  border-radius: 50%;
+  animation: pulse 2.5s infinite;
+}
+
+.nav-summary-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: rgba(255,255,255,0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,1);
+  border-radius: 14px;
+  box-shadow: 0 4px 20px rgba(26,108,255,0.08), inset 0 1px 0 rgba(255,255,255,1);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dark);
+  cursor: none;
+  transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
+  outline: none;
+}
+.nav-summary-btn:hover {
+  background: rgba(255,255,255,0.8);
+  border-color: rgba(255,255,255,1);
+  transform: scale(1.03);
+  box-shadow: 0 8px 24px rgba(26,108,255,0.1), inset 0 1px 0 rgba(255,255,255,1);
+}
+.badge {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: rgba(26,108,255,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--blue);
+  letter-spacing: 0;
+  transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
+  flex-shrink: 0;
+}
+.nav-summary-btn:hover .badge {
+  background: var(--blue);
+  color: var(--white);
+}
+
+/* ─── MAIN ─── */
+main {
+  flex: 1;
+  padding: 48px 24px 80px;
+  max-width: 1000px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.page-header {
+  margin-bottom: 40px;
+  animation: fadeUp 0.8s 0.4s cubic-bezier(0.16,1,0.3,1) both;
+}
+.page-header h1 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(48px, 6vw, 72px);
+  font-weight: 300;
+  letter-spacing: -0.04em;
+  color: var(--dark);
+  line-height: 1.0;
+}
+.page-header h1 em { font-style: italic; color: var(--blue); }
+.page-header p {
+  font-size: 15px;
+  color: var(--muted);
+  margin-top: 10px;
+  font-weight: 300;
+}
+
+/* ─── SPEC CARDS ─── */
+#specs-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.spec-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  padding: 28px 32px 32px;
+  box-shadow: 0 4px 24px rgba(26,108,255,0.06);
+  animation: slideIn 0.5s cubic-bezier(0.16,1,0.3,1) both;
+  transition: box-shadow 0.3s ease;
+}
+.spec-card:hover { box-shadow: 0 8px 40px rgba(26,108,255,0.1); }
+
+.spec-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.spec-num {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.9);
+  box-shadow: 0 2px 12px rgba(26,108,255,0.08), inset 0 1px 0 rgba(255,255,255,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.spec-delete-btn {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.9);
+  box-shadow: 0 2px 12px rgba(26,108,255,0.08), inset 0 1px 0 rgba(255,255,255,0.8);
+  color: var(--muted);
+  font-size: 14px;
+  cursor: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
+  line-height: 1;
+  flex-shrink: 0;
+}
+.spec-delete-btn:hover {
+  background: rgba(255,220,220,0.7);
+  border-color: rgba(255,180,180,0.8);
+  color: #e53e3e;
+  box-shadow: 0 4px 16px rgba(229,62,62,0.15), inset 0 1px 0 rgba(255,255,255,0.8);
+}
+
+/* Name input */
+.spec-name-input {
+  width: 100%;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 26px;
+  font-weight: 300;
+  letter-spacing: -0.03em;
+  color: var(--dark);
+  background: rgba(255,255,255,0.45);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.85);
+  border-radius: 16px;
+  box-shadow: 0 2px 16px rgba(26,108,255,0.05), inset 0 1px 0 rgba(255,255,255,0.9);
+  padding: 14px 20px;
+  margin-bottom: 28px;
+  outline: none;
+  transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
+  cursor: none;
+}
+.spec-name-input::placeholder { color: rgba(10,10,20,0.2); font-style: italic; }
+.spec-name-input:focus {
+  background: rgba(255,255,255,0.65);
+  border-color: rgba(26,108,255,0.3);
+  box-shadow: 0 0 0 3px rgba(26,108,255,0.07), 0 4px 20px rgba(26,108,255,0.08), inset 0 1px 0 rgba(255,255,255,0.9);
+}
+
+/* Grid */
+.spec-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+
+.spec-col-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dark);
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.spec-col-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(10,10,20,0.1);
+}
+
+.input-group {
+  margin-bottom: 16px;
+}
+.input-group label {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.size-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.size-input-wrap {
+  position: relative;
+}
+.size-input-wrap input {
+  width: 100%;
+  padding: 11px 36px 11px 14px;
+  background: rgba(255,255,255,0.45);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.85);
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(26,108,255,0.05), inset 0 1px 0 rgba(255,255,255,0.9);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--dark);
+  outline: none;
+  transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
+  cursor: none;
+  -moz-appearance: textfield;
+}
+.size-input-wrap input::-webkit-inner-spin-button,
+.size-input-wrap input::-webkit-outer-spin-button { -webkit-appearance: none; }
+.size-input-wrap input:focus {
+  background: rgba(255,255,255,0.65);
+  border-color: rgba(26,108,255,0.3);
+  box-shadow: 0 0 0 3px rgba(26,108,255,0.07), 0 4px 16px rgba(26,108,255,0.08), inset 0 1px 0 rgba(255,255,255,0.9);
+}
+.size-input-wrap input::placeholder { color: rgba(10,10,20,0.2); font-weight: 400; }
+.size-input-unit {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+/* Output fields */
+.output-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 10px 11px 14px;
+  background: rgba(26,108,255,0.07);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(26,108,255,0.18);
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(26,108,255,0.06), inset 0 1px 0 rgba(255,255,255,0.6);
+  margin-bottom: 8px;
+}
+.output-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--blue);
+  letter-spacing: -0.2px;
+}
+.output-placeholder { font-size: 14px; color: rgba(10,10,20,0.2); }
+.copy-mini-btn {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--blue-border);
+  background: rgba(255,255,255,0.6);
+  color: var(--blue);
+  font-size: 12px;
+  cursor: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.copy-mini-btn:hover { background: var(--blue); color: var(--white); }
+.copy-mini-btn.copied { background: #10b981; border-color: #10b981; color: var(--white); }
+
+/* ─── ADD BUTTON ─── */
+.add-btn {
+  width: 100%;
+  padding: 18px;
+  background: rgba(255,255,255,0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,1);
+  border-radius: 24px;
+  box-shadow: 0 4px 20px rgba(26,108,255,0.08), inset 0 1px 0 rgba(255,255,255,1);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dark);
+  cursor: none;
+  transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  animation: fadeUp 0.7s 0.7s cubic-bezier(0.16,1,0.3,1) both;
+}
+.add-btn:hover {
+  background: rgba(255,255,255,0.8);
+  border-color: rgba(255,255,255,1);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(26,108,255,0.1), inset 0 1px 0 rgba(255,255,255,1);
+}
+.add-btn .plus-icon {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: rgba(26,108,255,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 300;
+  color: var(--blue);
+  line-height: 1;
+  transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
+  padding-bottom: 1px;
+}
+.add-btn:hover .plus-icon {
+  background: var(--blue);
+  color: var(--white);
+}
+
+/* ─── SUMMARY MODAL ─── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10,10,20,0.3);
+  backdrop-filter: blur(8px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.modal-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.modal {
+  background: var(--white);
+  border-radius: 28px;
+  width: 100%;
+  max-width: 680px;
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 32px 80px rgba(10,10,20,0.25);
+  transform: translateY(24px) scale(0.97);
+  transition: transform 0.35s cubic-bezier(0.16,1,0.3,1);
+}
+.modal-overlay.open .modal { transform: translateY(0) scale(1); }
+
+.modal-header {
+  padding: 28px 32px 20px;
+  border-bottom: 1px solid rgba(10,10,20,0.07);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.modal-header h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 32px;
+  font-weight: 300;
+  letter-spacing: -0.04em;
+}
+.modal-header p { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.modal-close {
+  width: 32px; height: 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(10,10,20,0.1);
+  background: transparent;
+  color: var(--muted);
+  font-size: 18px;
+  cursor: none;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.modal-close:hover { background: rgba(10,10,20,0.05); color: var(--dark); }
+
+.modal-body { padding: 20px 32px; overflow-y: auto; flex: 1; }
+
+.summary-item {
+  background: #f7f8fc;
+  border-radius: 18px;
+  padding: 22px 24px;
+  margin-bottom: 12px;
+}
+.summary-item-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px;
+  font-weight: 300;
+  letter-spacing: -0.03em;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(10,10,20,0.07);
+}
+.summary-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+.summary-col {}
+.summary-col-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+.summary-col-value { font-size: 15px; font-weight: 600; color: var(--dark); letter-spacing: -0.3px; }
+.summary-col-unit { font-size: 11px; color: var(--muted); font-weight: 400; }
+
+.modal-footer {
+  padding: 18px 32px;
+  border-top: 1px solid rgba(10,10,20,0.07);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.btn-copy-all {
+  flex: 1;
+  padding: 13px;
+  background: var(--blue);
+  color: var(--white);
+  border: none;
+  border-radius: 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: none;
+  transition: all 0.22s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-copy-all:hover { background: #0f5ae0; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(26,108,255,0.3); }
+
+.btn-copy-json {
+  flex: 1;
+  padding: 13px;
+  background: rgba(10,10,20,0.06);
+  color: var(--dark);
+  border: none;
+  border-radius: 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: none;
+  transition: all 0.22s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-copy-json:hover { background: rgba(10,10,20,0.1); }
+
+.btn-dl {
+  width: 44px; height: 44px;
+  background: rgba(10,10,20,0.06);
+  border: 1px solid rgba(10,10,20,0.1);
+  border-radius: 12px;
+  cursor: none;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.btn-dl:hover { background: rgba(10,10,20,0.1); transform: translateY(-1px); }
+
+/* ─── TOAST ─── */
+.toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--dark);
+  color: var(--white);
+  padding: 12px 22px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 9999;
+  transition: transform 0.4s cubic-bezier(0.16,1,0.3,1), opacity 0.4s;
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+/* ─── KEYFRAMES ─── */
+@keyframes fadeDown { from { opacity:0; transform: translateY(-12px); } to { opacity:1; transform: translateY(0); } }
+@keyframes fadeUp { from { opacity:0; transform: translateY(24px); } to { opacity:1; transform: translateY(0); } }
+@keyframes slideIn { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: translateY(0); } }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(1.3)} }
+
+@media (max-width: 640px) {
+  .spec-grid { grid-template-columns: 1fr; gap: 24px; }
+  .summary-row { grid-template-columns: 1fr 1fr; }
+  main { padding: 32px 16px 60px; }
+  .spec-card { padding: 22px 20px 24px; }
+  .modal-footer { flex-wrap: wrap; }
+  .btn-copy-all, .btn-copy-json { flex: none; width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+<canvas id="meshCanvas"></canvas>
+
+<div class="app">
+  <!-- Nav -->
+  <nav>
+    <div class="nav-logo">
+      <div class="nav-logo-dot"></div>
+      Image Specs Calculator
+    </div>
+    <button class="nav-summary-btn" id="summaryBtn" onclick="openSummary()">
+      See Summary <span class="badge" id="badge">0</span>
+    </button>
+  </nav>
+
+  <!-- Main -->
+  <main>
+    <div class="page-header">
+      <h1>Image Specs<br><em>Calculator</em></h1>
+      <p>Calculate retina @2x sizes and aspect ratios from your image dimensions.</p>
+    </div>
+
+    <div id="specs-container"></div>
+
+    <button class="add-btn" onclick="addSpec()">
+      <span class="plus-icon">+</span> Add Another Spec
+    </button>
+  </main>
+</div>
+
+<!-- Summary Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h2>Summary</h2>
+        <p id="summaryCount">0 specs calculated</p>
+      </div>
+      <button class="modal-close" onclick="closeSummary()">✕</button>
+    </div>
+    <div class="modal-body" id="summaryBody"></div>
+    <div class="modal-footer">
+      <button class="btn-copy-all" onclick="copyAll()">📋 Copy Summary</button>
+      <button class="btn-copy-json" onclick="copyJSON()">{ } Copy JSON</button>
+      <button class="btn-dl" onclick="downloadJSON()" title="Download JSON">⬇</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── CURSOR ───
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+let mx = 0, my = 0, rx = 0, ry = 0;
+
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  cursor.style.left = mx - 5 + 'px';
+  cursor.style.top = my - 5 + 'px';
+});
+
+(function animRing() {
+  rx += (mx - rx - 18) * 0.13;
+  ry += (my - ry - 18) * 0.13;
+  ring.style.left = rx + 'px';
+  ring.style.top = ry + 'px';
+  requestAnimationFrame(animRing);
+})();
+
+document.addEventListener('mouseover', e => {
+  if (e.target.closest('button, input, a')) {
+    cursor.style.transform = 'scale(2)';
+    ring.style.opacity = '0.7';
+    ring.style.borderColor = 'var(--blue)';
+  }
+});
+document.addEventListener('mouseout', e => {
+  if (e.target.closest('button, input, a')) {
+    cursor.style.transform = 'scale(1)';
+    ring.style.opacity = '0.45';
+  }
+});
+
+// ─── MESH ───
+const canvas = document.getElementById('meshCanvas');
+const ctx = canvas.getContext('2d');
+canvas.style.position = 'fixed';
+canvas.style.inset = '0';
+canvas.style.zIndex = '0';
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+const blobs = [
+  { x: 0.15, y: 0.2, r: 0.48, c: '#c4d8ff', s: 0.00028 },
+  { x: 0.85, y: 0.15, r: 0.42, c: '#b8f0e0', s: 0.00036 },
+  { x: 0.5, y: 0.75, r: 0.52, c: '#dce8ff', s: 0.00022 },
+  { x: 0.92, y: 0.8, r: 0.38, c: '#ffd6f0', s: 0.0003 },
+];
+let t = 0;
+function drawMesh() {
+  t++;
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#eef2ff';
+  ctx.fillRect(0, 0, W, H);
+  blobs.forEach((b, i) => {
+    const x = (b.x + Math.sin(t * b.s + i * 1.3) * 0.14) * W;
+    const y = (b.y + Math.cos(t * b.s * 1.2 + i) * 0.12) * H;
+    const r = b.r * Math.min(W, H);
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, b.c + 'b0');
+    g.addColorStop(1, b.c + '00');
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = g; ctx.fill();
+  });
+  requestAnimationFrame(drawMesh);
+}
+drawMesh();
+
+// ─── SPECS DATA ───
+let specs = [];
+let specCount = 0;
+
+function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+function getAspectRatio(w, h) {
+  if (!w || !h) return '—';
+  const d = gcd(w, h);
+  return `${w/d}:${h/d}`;
+}
+
+function addSpec(name = '', dw = '', dh = '', mw = '', mh = '') {
+  specCount++;
+  const id = 'spec-' + Date.now();
+  specs.push({ id, name, dw, dh, mw, mh });
+
+  const card = document.createElement('div');
+  card.className = 'spec-card';
+  card.id = id;
+  card.style.animationDelay = '0s';
+
+  card.innerHTML = `
+    <div class="spec-card-header">
+    <span class="spec-num">${String(specs.length).padStart(2,'0')}</span>
+      <button class="spec-delete-btn" onclick="removeSpec('${id}')" title="Remove">×</button>
+    </div>
+
+    <input
+      class="spec-name-input"
+      type="text"
+      placeholder="Spec name (e.g. Hero Banner)"
+      value="${name}"
+      oninput="updateSpec('${id}', 'name', this.value)"
+    />
+
+    <div class="spec-grid">
+      <!-- Desktop -->
+      <div>
+        <div class="spec-col-label">🖥 Desktop</div>
+        <div class="input-group">
+          <label>Base Size</label>
+          <div class="size-inputs">
+            <div class="size-input-wrap">
+              <input type="number" placeholder="1440" value="${dw}" oninput="updateSpec('${id}', 'dw', this.value)" min="0">
+              <span class="size-input-unit">W</span>
+            </div>
+            <div class="size-input-wrap">
+              <input type="number" placeholder="810" value="${dh}" oninput="updateSpec('${id}', 'dh', this.value)" min="0">
+              <span class="size-input-unit">H</span>
+            </div>
+          </div>
+        </div>
+        <div class="input-group">
+          <label>Retina @2x</label>
+          <div class="output-field" id="${id}-d2x">
+            <span class="output-placeholder">—</span>
+            <button class="copy-mini-btn" onclick="copyField('${id}-d2x')">⎘</button>
+          </div>
+        </div>
+        <div class="input-group">
+          <label>Aspect Ratio</label>
+          <div class="output-field" id="${id}-dar">
+            <span class="output-placeholder">—</span>
+            <button class="copy-mini-btn" onclick="copyField('${id}-dar')">⎘</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile -->
+      <div>
+        <div class="spec-col-label">📱 Mobile</div>
+        <div class="input-group">
+          <label>Base Size</label>
+          <div class="size-inputs">
+            <div class="size-input-wrap">
+              <input type="number" placeholder="375" value="${mw}" oninput="updateSpec('${id}', 'mw', this.value)" min="0">
+              <span class="size-input-unit">W</span>
+            </div>
+            <div class="size-input-wrap">
+              <input type="number" placeholder="500" value="${mh}" oninput="updateSpec('${id}', 'mh', this.value)" min="0">
+              <span class="size-input-unit">H</span>
+            </div>
+          </div>
+        </div>
+        <div class="input-group">
+          <label>Retina @2x</label>
+          <div class="output-field" id="${id}-m2x">
+            <span class="output-placeholder">—</span>
+            <button class="copy-mini-btn" onclick="copyField('${id}-m2x')">⎘</button>
+          </div>
+        </div>
+        <div class="input-group">
+          <label>Aspect Ratio</label>
+          <div class="output-field" id="${id}-mar">
+            <span class="output-placeholder">—</span>
+            <button class="copy-mini-btn" onclick="copyField('${id}-mar')">⎘</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('specs-container').appendChild(card);
+  card.querySelector('.spec-name-input').focus();
+
+  if (dw || dh || mw || mh) recalculate(id);
+  updateBadge();
+}
+
+function updateSpec(id, field, value) {
+  const spec = specs.find(s => s.id === id);
+  if (!spec) return;
+  spec[field] = value;
+  recalculate(id);
+}
+
+function recalculate(id) {
+  const spec = specs.find(s => s.id === id);
+  if (!spec) return;
+
+  const dw = parseInt(spec.dw), dh = parseInt(spec.dh);
+  const mw = parseInt(spec.mw), mh = parseInt(spec.mh);
+
+  // Desktop @2x
+  const d2xEl = document.getElementById(id + '-d2x');
+  if (dw && dh) {
+    d2xEl.innerHTML = `<span class="output-value">${dw*2} × ${dh*2} px</span><button class="copy-mini-btn" onclick="copyField('${id}-d2x')">⎘</button>`;
+  } else {
+    d2xEl.innerHTML = `<span class="output-placeholder">—</span><button class="copy-mini-btn" onclick="copyField('${id}-d2x')">⎘</button>`;
+  }
+
+  // Desktop Ratio
+  const darEl = document.getElementById(id + '-dar');
+  if (dw && dh) {
+    darEl.innerHTML = `<span class="output-value">${getAspectRatio(dw,dh)}</span><button class="copy-mini-btn" onclick="copyField('${id}-dar')">⎘</button>`;
+  } else {
+    darEl.innerHTML = `<span class="output-placeholder">—</span><button class="copy-mini-btn" onclick="copyField('${id}-dar')">⎘</button>`;
+  }
+
+  // Mobile @2x
+  const m2xEl = document.getElementById(id + '-m2x');
+  if (mw && mh) {
+    m2xEl.innerHTML = `<span class="output-value">${mw*2} × ${mh*2} px</span><button class="copy-mini-btn" onclick="copyField('${id}-m2x')">⎘</button>`;
+  } else {
+    m2xEl.innerHTML = `<span class="output-placeholder">—</span><button class="copy-mini-btn" onclick="copyField('${id}-m2x')">⎘</button>`;
+  }
+
+  // Mobile Ratio
+  const marEl = document.getElementById(id + '-mar');
+  if (mw && mh) {
+    marEl.innerHTML = `<span class="output-value">${getAspectRatio(mw,mh)}</span><button class="copy-mini-btn" onclick="copyField('${id}-mar')">⎘</button>`;
+  } else {
+    marEl.innerHTML = `<span class="output-placeholder">—</span><button class="copy-mini-btn" onclick="copyField('${id}-mar')">⎘</button>`;
+  }
+
+  updateBadge();
+}
+
+function removeSpec(id) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.style.transition = 'all 0.3s cubic-bezier(0.4,0,1,1)';
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(-10px) scale(0.98)';
+    setTimeout(() => el.remove(), 300);
+  }
+  specs = specs.filter(s => s.id !== id);
+  updateBadge();
+  // Re-number
+  setTimeout(() => {
+    document.querySelectorAll('.spec-num').forEach((el, i) => {
+      el.textContent = String(i+1).padStart(2,'0');
+    });
+  }, 350);
+}
+
+function updateBadge() {
+  const calculated = specs.filter(s => (s.dw && s.dh) || (s.mw && s.mh)).length;
+  document.getElementById('badge').textContent = calculated;
+}
+
+// ─── COPY HELPERS ───
+function copyField(fieldId) {
+  const el = document.getElementById(fieldId);
+  if (!el) return;
+  const valEl = el.querySelector('.output-value');
+  if (!valEl) { showToast('Nothing to copy yet'); return; }
+  navigator.clipboard.writeText(valEl.textContent).then(() => {
+    const btn = el.querySelector('.copy-mini-btn');
+    if (btn) {
+      btn.classList.add('copied');
+      btn.textContent = '✓';
+      setTimeout(() => { btn.classList.remove('copied'); btn.textContent = '⎘'; }, 1500);
+    }
+    showToast('Copied!');
+  });
+}
+
+function copyAll() {
+  const lines = [];
+  specs.forEach((spec) => {
+    const dw = parseInt(spec.dw), dh = parseInt(spec.dh);
+    const mw = parseInt(spec.mw), mh = parseInt(spec.mh);
+    if (!((dw && dh) || (mw && mh))) return;
+    lines.push(spec.name || 'Untitled');
+    if (dw && dh) {
+      lines.push(`  Desktop: ${dw*2} × ${dh*2} px`);
+      lines.push(`  Desktop Ratio: ${getAspectRatio(dw,dh)}`);
+    }
+    if (mw && mh) {
+      lines.push(`  Mobile: ${mw*2} × ${mh*2} px`);
+      lines.push(`  Mobile Ratio: ${getAspectRatio(mw,mh)}`);
+    }
+    lines.push('');
+  });
+  navigator.clipboard.writeText(lines.join('\n').trimEnd()).then(() => showToast('Summary copied!'));
+}
+
+function getJSONData() {
+  return specs.map((spec, i) => {
+    const dw = parseInt(spec.dw), dh = parseInt(spec.dh);
+    const mw = parseInt(spec.mw), mh = parseInt(spec.mh);
+    return {
+      id: i + 1,
+      name: spec.name || 'Untitled',
+      desktop: dw && dh ? {
+        base: { width: dw, height: dh },
+        retina2x: { width: dw*2, height: dh*2 },
+        aspectRatio: getAspectRatio(dw, dh)
+      } : null,
+      mobile: mw && mh ? {
+        base: { width: mw, height: mh },
+        retina2x: { width: mw*2, height: mh*2 },
+        aspectRatio: getAspectRatio(mw, mh)
+      } : null
+    };
+  });
+}
+
+function copyJSON() {
+  navigator.clipboard.writeText(JSON.stringify(getJSONData(), null, 2))
+    .then(() => showToast('JSON copied!'));
+}
+
+function downloadJSON() {
+  const blob = new Blob([JSON.stringify(getJSONData(), null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'image-specs.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('JSON downloaded!');
+}
+
+// ─── MODAL ───
+function openSummary() {
+  const calculated = specs.filter(s => (s.dw && s.dh) || (s.mw && s.mh));
+  if (calculated.length === 0) { showToast('Enter some dimensions first!'); return; }
+
+  document.getElementById('summaryCount').textContent = `${calculated.length} spec${calculated.length > 1 ? 's' : ''} calculated`;
+
+  const body = document.getElementById('summaryBody');
+  body.innerHTML = '';
+
+  calculated.forEach((spec, i) => {
+    const dw = parseInt(spec.dw), dh = parseInt(spec.dh);
+    const mw = parseInt(spec.mw), mh = parseInt(spec.mh);
+    const item = document.createElement('div');
+    item.className = 'summary-item';
+    item.innerHTML = `
+      <div class="summary-item-name">${spec.name || 'Untitled'}</div>
+      ${dw && dh ? `
+        <div class="summary-row">
+          <div class="summary-col"><div class="summary-col-label">Desktop Base Size</div><div class="summary-col-value">${dw} × ${dh}</div><div class="summary-col-unit">pixels</div></div>
+          <div class="summary-col"><div class="summary-col-label">Desktop Retina @2x</div><div class="summary-col-value">${dw*2} × ${dh*2}</div><div class="summary-col-unit">pixels</div></div>
+          <div class="summary-col"><div class="summary-col-label">Desktop Aspect Ratio</div><div class="summary-col-value">${getAspectRatio(dw,dh)}</div><div class="summary-col-unit">simplified</div></div>
+        </div>
+      ` : ''}
+      ${mw && mh ? `
+        <div class="summary-row">
+          <div class="summary-col"><div class="summary-col-label">Mobile Base Size</div><div class="summary-col-value">${mw} × ${mh}</div><div class="summary-col-unit">pixels</div></div>
+          <div class="summary-col"><div class="summary-col-label">Mobile Retina @2x</div><div class="summary-col-value">${mw*2} × ${mh*2}</div><div class="summary-col-unit">pixels</div></div>
+          <div class="summary-col"><div class="summary-col-label">Mobile Aspect Ratio</div><div class="summary-col-value">${getAspectRatio(mw,mh)}</div><div class="summary-col-unit">simplified</div></div>
+        </div>
+      ` : ''}
+    `;
+    body.appendChild(item);
+  });
+
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeSummary() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+function handleOverlayClick(e) {
+  if (e.target === e.currentTarget) closeSummary();
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeSummary();
+});
+
+// ─── TOAST ───
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ─── INIT ───
+addSpec('hero banner', 1440, 810, 375, 500);
+</script>
+</body>
+</html>
