@@ -393,8 +393,7 @@ main {
   margin-top: 8px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
+  justify-content: center; gap: 10px;
   animation: fadeUp 0.7s 0.7s cubic-bezier(0.16,1,0.3,1) both;
 }
 .add-btn:hover {
@@ -739,6 +738,13 @@ function getAspectRatio(w, h) {
   return `${w/d}:${h/d}`;
 }
 
+// ─── TITLE CASE HELPER ───
+function toTitleCase(str) {
+  return str.toLowerCase().split(' ').map(function(word) {
+    return (word.charAt(0).toUpperCase() + word.slice(1));
+  }).join(' ');
+}
+
 function addSpec(name = '', dw = '', dh = '', mw = '', mh = '') {
   specCount++;
   const id = 'spec-' + Date.now();
@@ -760,7 +766,7 @@ function addSpec(name = '', dw = '', dh = '', mw = '', mh = '') {
       type="text"
       placeholder="Spec name (e.g. Hero Banner)"
       value="${name}"
-      oninput="updateSpec('${id}', 'name', this.value)"
+      oninput="this.value = toTitleCase(this.value); updateSpec('${id}', 'name', this.value)"
     />
 
     <div class="spec-grid">
@@ -770,11 +776,11 @@ function addSpec(name = '', dw = '', dh = '', mw = '', mh = '') {
           <label>Base Size</label>
           <div class="size-inputs">
             <div class="size-input-wrap">
-              <input type="number" placeholder="1440" value="${dw}" oninput="updateSpec('${id}', 'dw', this.value)" min="0">
+              <input type="number" placeholder="" value="${dw}" oninput="updateSpec('${id}', 'dw', this.value)" min="0">
               <span class="size-input-unit">W</span>
             </div>
             <div class="size-input-wrap">
-              <input type="number" placeholder="810" value="${dh}" oninput="updateSpec('${id}', 'dh', this.value)" min="0">
+              <input type="number" placeholder="" value="${dh}" oninput="updateSpec('${id}', 'dh', this.value)" min="0">
               <span class="size-input-unit">H</span>
             </div>
           </div>
@@ -801,11 +807,11 @@ function addSpec(name = '', dw = '', dh = '', mw = '', mh = '') {
           <label>Base Size</label>
           <div class="size-inputs">
             <div class="size-input-wrap">
-              <input type="number" placeholder="375" value="${mw}" oninput="updateSpec('${id}', 'mw', this.value)" min="0">
+              <input type="number" placeholder="" value="${mw}" oninput="updateSpec('${id}', 'mw', this.value)" min="0">
               <span class="size-input-unit">W</span>
             </div>
             <div class="size-input-wrap">
-              <input type="number" placeholder="500" value="${mh}" oninput="updateSpec('${id}', 'mh', this.value)" min="0">
+              <input type="number" placeholder="" value="${mh}" oninput="updateSpec('${id}', 'mh', this.value)" min="0">
               <span class="size-input-unit">H</span>
             </div>
           </div>
@@ -932,12 +938,12 @@ function copyAll() {
     if (!((dw && dh) || (mw && mh))) return;
     lines.push(spec.name || 'Untitled');
     if (dw && dh) {
-      lines.push(`  Desktop: ${dw*2} × ${dh*2} px`);
-      lines.push(`  Desktop Ratio: ${getAspectRatio(dw,dh)}`);
+      lines.push(`  Desktop Export: ${dw*2} × ${dh*2} px`);
+      lines.push(`  Desktop Aspect Ratio: ${getAspectRatio(dw,dh)}`);
     }
     if (mw && mh) {
-      lines.push(`  Mobile: ${mw*2} × ${mh*2} px`);
-      lines.push(`  Mobile Ratio: ${getAspectRatio(mw,mh)}`);
+      lines.push(`  Mobile Export: ${mw*2} × ${mh*2} px`);
+      lines.push(`  Mobile Aspect Ratio: ${getAspectRatio(mw,mh)}`);
     }
     lines.push('');
   });
@@ -1001,11 +1007,11 @@ function openSummary() {
       ${dw && dh ? `
         <div class="summary-row">
           <div class="summary-col">
-            <div class="summary-col-label">Desktop</div>
+            <div class="summary-col-label">Desktop Export</div>
             <div class="summary-col-value">${dw*2} × ${dh*2} px</div>
           </div>
           <div class="summary-col">
-            <div class="summary-col-label">Desktop Ratio</div>
+            <div class="summary-col-label">Desktop Aspect Ratio</div>
             <div class="summary-col-value">${getAspectRatio(dw,dh)}</div>
           </div>
         </div>
@@ -1013,11 +1019,11 @@ function openSummary() {
       ${mw && mh ? `
         <div class="summary-row" style="margin-top: 12px;">
           <div class="summary-col">
-            <div class="summary-col-label">Mobile</div>
+            <div class="summary-col-label">Mobile Export</div>
             <div class="summary-col-value">${mw*2} × ${mh*2} px</div>
           </div>
           <div class="summary-col">
-            <div class="summary-col-label">Mobile Ratio</div>
+            <div class="summary-col-label">Mobile Aspect Ratio</div>
             <div class="summary-col-value">${getAspectRatio(mw,mh)}</div>
           </div>
         </div>
@@ -1050,7 +1056,7 @@ function showToast(msg) {
 }
 
 // ─── INIT ───
-addSpec('hero banner', 1440, 810, 375, 500);
+addSpec('Hero Banner', '', '', '', '');
 </script>
 </body>
 </html>
